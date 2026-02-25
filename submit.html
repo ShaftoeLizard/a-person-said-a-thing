@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Propose a Quote — A Person Said a Thing</title>
+  <meta name="description" content="Submit a quote to be featured on A Person Said a Thing.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="page-container">
+    <a href="index.html" class="back-link">&larr; Back to quotes</a>
+
+    <div class="page-header">
+      <h1 class="page-title">Propose a Quote</h1>
+      <p class="page-description">
+        Know a quote that deserves to be preserved? Fill in the details below and submit it for review.
+        Great quotes are interesting, representative of their era, and speak to something true about the human condition.
+      </p>
+    </div>
+
+    <form class="quote-form" id="quote-form">
+
+      <!-- The Quote -->
+      <div class="form-group">
+        <label class="form-label" for="quote-text">The Quote *</label>
+        <textarea class="form-textarea" id="quote-text" name="text" required
+          placeholder="Enter the exact quote here..." rows="3"></textarea>
+      </div>
+
+      <!-- Speaker & Date -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="speaker">Speaker *</label>
+          <input class="form-input" type="text" id="speaker" name="speaker" required
+            placeholder="e.g. Marcus Aurelius">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quote-date">Date of Quote *</label>
+          <input class="form-input" type="text" id="quote-date" name="date" required
+            placeholder="e.g. c. 170 AD, June 12 2005">
+        </div>
+      </div>
+
+      <!-- Speaker Details -->
+      <div class="form-group">
+        <label class="form-label" for="role">Speaker's Role / Position</label>
+        <span class="form-hint">Their role at the time the quote was said</span>
+        <input class="form-input" type="text" id="role" name="role"
+          placeholder="e.g. Roman Emperor and Stoic philosopher">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="social-link">Speaker's Social Media or Bio Link</label>
+        <span class="form-hint">Twitter/X preferred; Wikipedia or similar for historical figures</span>
+        <input class="form-input" type="url" id="social-link" name="socialLink"
+          placeholder="https://x.com/username or https://en.wikipedia.org/wiki/...">
+      </div>
+
+      <!-- Source Context -->
+      <p class="form-section-title">Context</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="source-type">Source Type *</label>
+          <select class="form-select" id="source-type" name="source" required>
+            <option value="">Select...</option>
+            <option value="Tweet">Tweet / Post</option>
+            <option value="Interview">Interview</option>
+            <option value="Speech">Speech</option>
+            <option value="Book">Book</option>
+            <option value="Article">Article / Blog</option>
+            <option value="Podcast">Podcast</option>
+            <option value="Letter">Letter</option>
+            <option value="Film">Film / TV</option>
+            <option value="Poem">Poem</option>
+            <option value="Attributed">Attributed / Traditional</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="source-detail">Source Details</label>
+          <input class="form-input" type="text" id="source-detail" name="sourceDetail"
+            placeholder="e.g. Stanford Commencement Address">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="historical-context">Why does this quote matter?</label>
+        <span class="form-hint">Historical context, relevance today, why it should be preserved</span>
+        <textarea class="form-textarea" id="historical-context" name="historicalContext"
+          placeholder="Tell us why this quote is important..." rows="4"></textarea>
+      </div>
+
+      <!-- Verification -->
+      <p class="form-section-title">Verification</p>
+
+      <div class="verification-box">
+        <p class="verification-title">Prove you're human</p>
+
+        <div class="form-group">
+          <label class="form-label" for="submitter-name">Your Name *</label>
+          <input class="form-input" type="text" id="submitter-name" name="submitterName" required
+            placeholder="Your full name">
+        </div>
+
+        <div class="form-group" style="margin-top: 0.75rem;">
+          <label class="form-label" for="submitter-social">Your Social Media Account *</label>
+          <span class="form-hint">Link to your active X/Twitter, LinkedIn, or other social media profile</span>
+          <input class="form-input" type="url" id="submitter-social" name="submitterSocial" required
+            placeholder="https://x.com/yourusername">
+        </div>
+
+        <!-- CAPTCHA placeholder -->
+        <div id="captcha-placeholder" style="margin-top: 1rem; padding: 1rem; background: var(--bg-primary); border-radius: 8px; text-align: center;">
+          <p style="font-size: 0.8rem; color: var(--text-light);">
+            [CAPTCHA verification will be integrated here]
+          </p>
+        </div>
+
+        <p class="verification-note">
+          Your social media account will be reviewed to verify you are a real person.
+          Your personal info is never shared publicly &mdash; only the quote and its speaker appear on the site.
+        </p>
+      </div>
+
+      <button type="submit" class="submit-btn">Propose Quote</button>
+    </form>
+
+    <!-- Success state (hidden by default) -->
+    <div id="submit-success" style="display: none; text-align: center; padding: 3rem 1rem;">
+      <h2 style="font-family: var(--font-display); font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--accent-coral);">
+        Quote Proposed!
+      </h2>
+      <p style="color: var(--text-secondary); line-height: 1.6; max-width: 450px; margin: 0 auto 1.5rem;">
+        Thank you for your contribution. Your quote is now in the review queue.
+        If approved, it will appear on the homepage among the collection.
+      </p>
+      <a href="index.html" class="nav-link">Back to Quotes</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('quote-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Collect form data
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+
+      // For the prototype, log the data and show success
+      console.log('Proposed quote:', data);
+
+      // In production, this would POST to a Cloudflare Worker / API endpoint
+      // that stores the proposal in a database for review
+
+      // Show success state
+      this.style.display = 'none';
+      document.querySelector('.page-header').style.display = 'none';
+      document.getElementById('submit-success').style.display = 'block';
+    });
+  </script>
+
+</body>
+</html>

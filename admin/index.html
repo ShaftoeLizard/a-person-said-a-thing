@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — A Person Said a Thing</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- Login overlay -->
+  <div class="admin-login-overlay" id="login-overlay">
+    <div class="admin-login-box">
+      <h2>Admin Access</h2>
+      <p>This area is restricted to site administrators.</p>
+      <input class="form-input" type="password" id="admin-password" placeholder="Enter password" autofocus>
+      <button class="submit-btn" id="login-btn">Enter</button>
+      <p id="login-error" style="color: #c62828; font-size: 0.8rem; margin-top: 0.75rem; display: none;">
+        Incorrect password.
+      </p>
+    </div>
+  </div>
+
+  <!-- Admin content (hidden until authenticated) -->
+  <div class="admin-container" id="admin-content" style="display: none;">
+
+    <a href="../index.html" class="back-link">&larr; Back to site</a>
+
+    <div class="admin-header">
+      <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-description">Manage your quote collection</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="quotes">All Quotes</button>
+      <button class="admin-tab" data-tab="pending">Pending Review <span id="pending-count"></span></button>
+    </div>
+
+    <!-- Stats -->
+    <div class="admin-stats" id="admin-stats">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total">—</div>
+        <div class="stat-label">Total Quotes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-speakers">—</div>
+        <div class="stat-label">Unique Speakers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-pending">0</div>
+        <div class="stat-label">Pending Review</div>
+      </div>
+    </div>
+
+    <!-- All Quotes tab -->
+    <div class="tab-content" id="tab-quotes">
+      <div class="admin-quote-list" id="quotes-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Pending Review tab -->
+    <div class="tab-content" id="tab-pending" style="display: none;">
+      <div class="admin-quote-list" id="pending-list">
+        <div class="empty-state">
+          <p>No pending quotes to review.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Simple client-side auth for prototype
+    // In production: use Cloudflare Access, OAuth, or similar
+    const ADMIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256 of 'password'
+
+    async function hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', tryLogin);
+    document.getElementById('admin-password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') tryLogin();
+    });
+
+    async function tryLogin() {
+      const pw = document.getElementById('admin-password').value;
+      const hash = await hashPassword(pw);
+      if (hash === ADMIN_HASH) {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        sessionStorage.setItem('admin_auth', 'true');
+        loadAdmin();
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    }
+
+    // Check session
+    if (sessionStorage.getItem('admin_auth') === 'true') {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('admin-content').style.display = 'block';
+      loadAdmin();
+    }
+
+    // Tab switching
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+      });
+    });
+
+    // Load admin data
+    async function loadAdmin() {
+      try {
+        const response = await fetch('../data/quotes.json');
+        const quotes = await response.json();
+
+        // Stats
+        document.getElementById('stat-total').textContent = quotes.length;
+        const speakers = new Set(quotes.map(q => q.speaker));
+        document.getElementById('stat-speakers').textContent = speakers.size;
+
+        // Quote list
+        const list = document.getElementById('quotes-list');
+        list.innerHTML = '';
+
+        quotes.forEach(quote => {
+          const card = document.createElement('div');
+          card.className = 'admin-quote-card';
+          card.innerHTML = `
+            <div>
+              <p class="admin-quote-text">"${quote.text}"</p>
+              <p class="admin-quote-speaker">— ${quote.speaker}, ${quote.date}</p>
+            </div>
+            <div class="admin-actions">
+              <button class="btn-edit" onclick="alert('Edit functionality requires backend integration')">Edit</button>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Error loading admin data:', err);
+      }
+    }
+  </script>
+
+</body>
+</html>
