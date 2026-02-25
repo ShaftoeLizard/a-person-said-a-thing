@@ -171,28 +171,12 @@ body {
   will-change: transform;
 }
 
-/* Scroll directions */
-.marquee-row.scroll-left {
-  animation: scroll-left var(--scroll-duration, 80s) linear infinite;
-}
-
-.marquee-row.scroll-right {
-  animation: scroll-right var(--scroll-duration, 80s) linear infinite;
-}
-
-/* Pause on hover */
-.marquee-track:hover .marquee-row {
-  animation-play-state: paused;
-}
-
-@keyframes scroll-left {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes scroll-right {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
+/* JS-driven scrolling — no CSS animations needed */
+/* Drag & touch interaction styles */
+.marquee-track {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
 }
 
 /* --- Quote Card --- */
@@ -846,4 +830,238 @@ body {
 .empty-state p {
   font-size: 0.9rem;
   font-style: italic;
+}
+
+/* --- Thumbnail Upload --- */
+.thumbnail-upload-zone {
+  position: relative;
+  width: 100%;
+  min-height: 120px;
+  border: 2px dashed rgba(196, 154, 108, 0.3);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: var(--bg-primary);
+}
+
+.thumbnail-upload-zone:hover,
+.thumbnail-upload-zone.dragover {
+  border-color: var(--accent-coral);
+  background: rgba(204, 120, 92, 0.04);
+}
+
+.thumbnail-upload-zone.has-image {
+  border-style: solid;
+  border-color: var(--accent-light);
+}
+
+.thumbnail-upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.thumbnail-upload-icon {
+  font-size: 1.75rem;
+  color: var(--accent-muted);
+}
+
+.thumbnail-upload-text {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.thumbnail-upload-text strong {
+  color: var(--accent-coral);
+}
+
+.thumbnail-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent-light);
+}
+
+.thumbnail-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.thumbnail-change-btn {
+  font-size: 0.75rem;
+  color: var(--accent-coral);
+  background: none;
+  border: 1px solid var(--accent-coral);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.thumbnail-change-btn:hover {
+  background: var(--accent-coral);
+  color: white;
+}
+
+/* --- Admin Search --- */
+.admin-search {
+  margin-bottom: 1.5rem;
+}
+
+.admin-search-input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1.5px solid rgba(196, 154, 108, 0.2);
+  border-radius: 10px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23A0A0A0' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 0.85rem center;
+  outline: none;
+  transition: border-color 0.25s ease;
+}
+
+.admin-search-input:focus {
+  border-color: var(--accent-coral);
+}
+
+/* --- Admin Expanded Card --- */
+.admin-quote-card.expanded {
+  flex-direction: column;
+}
+
+.admin-card-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(196, 154, 108, 0.1);
+}
+
+.admin-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.admin-detail-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-muted);
+}
+
+.admin-detail-value {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.admin-card-context {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .admin-card-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Admin Edit Modal --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 27, 27, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-xl);
+  max-width: 600px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: 1.5px solid rgba(196, 154, 108, 0.2);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  border-color: var(--text-secondary);
+}
+
+.btn-save {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-coral);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save:hover {
+  background: var(--accent-deep);
+}
+
+.btn-delete {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: none;
+  background: #ffebee;
+  color: #c62828;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+  background: #ffcdd2;
 }

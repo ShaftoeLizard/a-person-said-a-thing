@@ -14,45 +14,33 @@
 </head>
 <body>
 
-  <!-- Login overlay -->
-  <div class="admin-login-overlay" id="login-overlay">
-    <div class="admin-login-box">
-      <h2>Admin Access</h2>
-      <p>This area is restricted to site administrators.</p>
-      <input class="form-input" type="password" id="admin-password" placeholder="Enter password" autofocus>
-      <button class="submit-btn" id="login-btn">Enter</button>
-      <p id="login-error" style="color: #c62828; font-size: 0.8rem; margin-top: 0.75rem; display: none;">
-        Incorrect password.
-      </p>
-    </div>
-  </div>
-
-  <!-- Admin content (hidden until authenticated) -->
-  <div class="admin-container" id="admin-content" style="display: none;">
+  <!-- Admin content -->
+  <div class="admin-container" id="admin-content">
 
     <a href="../index.html" class="back-link">&larr; Back to site</a>
 
     <div class="admin-header">
       <div>
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-description">Manage your quote collection</p>
+        <h1 class="page-title">Quote Database</h1>
+        <p class="page-description">Browse, edit, and manage the full collection</p>
       </div>
+      <button class="submit-btn" id="btn-add-quote" style="padding: 0.65rem 1.5rem; font-size: 0.85rem;">+ Add Quote</button>
     </div>
 
     <!-- Tabs -->
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="quotes">All Quotes</button>
-      <button class="admin-tab" data-tab="pending">Pending Review <span id="pending-count"></span></button>
+      <button class="admin-tab" data-tab="pending">Pending Review <span id="pending-badge" style="background: var(--accent-coral); color: white; border-radius: 10px; padding: 0.1rem 0.5rem; font-size: 0.7rem; margin-left: 0.3rem; display: none;">0</span></button>
     </div>
 
     <!-- Stats -->
-    <div class="admin-stats" id="admin-stats">
+    <div class="admin-stats">
       <div class="stat-card">
-        <div class="stat-number" id="stat-total">—</div>
+        <div class="stat-number" id="stat-total">&mdash;</div>
         <div class="stat-label">Total Quotes</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="stat-speakers">—</div>
+        <div class="stat-number" id="stat-speakers">&mdash;</div>
         <div class="stat-label">Unique Speakers</div>
       </div>
       <div class="stat-card">
@@ -63,61 +51,439 @@
 
     <!-- All Quotes tab -->
     <div class="tab-content" id="tab-quotes">
-      <div class="admin-quote-list" id="quotes-list">
-        <!-- Populated by JS -->
+      <div class="admin-search">
+        <input type="text" class="admin-search-input" id="search-input"
+          placeholder="Search quotes, speakers, sources...">
       </div>
+      <div class="admin-quote-list" id="quotes-list"></div>
     </div>
 
     <!-- Pending Review tab -->
     <div class="tab-content" id="tab-pending" style="display: none;">
       <div class="admin-quote-list" id="pending-list">
-        <div class="empty-state">
-          <p>No pending quotes to review.</p>
-        </div>
+        <div class="empty-state"><p>No pending quotes to review.</p></div>
       </div>
     </div>
 
   </div>
 
-  <script>
-    // Simple client-side auth for prototype
-    // In production: use Cloudflare Access, OAuth, or similar
-    const ADMIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256 of 'password'
+  <!-- Edit/Add Modal (hidden) -->
+  <div class="modal-overlay" id="edit-modal" style="display: none;">
+    <div class="modal-box">
+      <h2 class="modal-title" id="modal-title">Edit Quote</h2>
+      <form class="quote-form" id="edit-form">
+        <input type="hidden" id="edit-id">
 
-    async function hashPassword(password) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        <div class="form-group">
+          <label class="form-label" for="edit-text">Quote *</label>
+          <textarea class="form-textarea" id="edit-text" required rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="edit-speaker">Speaker *</label>
+            <input class="form-input" type="text" id="edit-speaker" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-date">Date</label>
+            <input class="form-input" type="text" id="edit-date">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-role">Role / Position</label>
+          <input class="form-input" type="text" id="edit-role">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-social">Social / Bio Link</label>
+          <input class="form-input" type="url" id="edit-social">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="edit-source">Source Type</label>
+            <select class="form-select" id="edit-source">
+              <option value="">Select...</option>
+              <option value="Tweet">Tweet / Post</option>
+              <option value="Interview">Interview</option>
+              <option value="Speech">Speech</option>
+              <option value="Book">Book</option>
+              <option value="Article">Article / Blog</option>
+              <option value="Podcast">Podcast</option>
+              <option value="Letter">Letter</option>
+              <option value="Film">Film / TV</option>
+              <option value="Poem">Poem</option>
+              <option value="Attributed">Attributed</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-source-detail">Source Details</label>
+            <input class="form-input" type="text" id="edit-source-detail">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-context">Historical Context</label>
+          <textarea class="form-textarea" id="edit-context" rows="3"></textarea>
+        </div>
+
+        <!-- Thumbnail Upload -->
+        <div class="form-group">
+          <label class="form-label">Speaker Thumbnail</label>
+          <div class="thumbnail-upload-zone" id="edit-thumbnail-zone">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="edit-thumbnail-file">
+            <div id="edit-thumbnail-preview-area">
+              <div class="thumbnail-upload-icon">&#128247;</div>
+              <p class="thumbnail-upload-text">Drag &amp; drop an image or <strong>click to browse</strong></p>
+            </div>
+          </div>
+          <input type="hidden" id="edit-thumbnail-url">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="btn-cancel-edit">Cancel</button>
+          <button type="button" class="btn-delete" id="btn-delete-quote" style="display: none;">Delete</button>
+          <button type="submit" class="btn-save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ─── State ───────────────────────────────────────────
+    let allQuotes = [];
+    let pendingProposals = [];
+    const API_BASE = '';
+    const AUTH_TOKEN = sessionStorage.getItem('admin_token') || '';
+
+    function headers() {
+      const h = { 'Content-Type': 'application/json' };
+      if (AUTH_TOKEN) h['Authorization'] = `Bearer ${AUTH_TOKEN}`;
+      return h;
     }
 
-    // Login
-    document.getElementById('login-btn').addEventListener('click', tryLogin);
-    document.getElementById('admin-password').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') tryLogin();
-    });
+    // ─── Load Data ───────────────────────────────────────
+    async function loadQuotes() {
+      try {
+        // Try API first, fall back to static JSON
+        let quotes;
+        try {
+          const r = await fetch('/api/quotes');
+          if (r.ok) {
+            quotes = await r.json();
+          }
+        } catch {}
 
-    async function tryLogin() {
-      const pw = document.getElementById('admin-password').value;
-      const hash = await hashPassword(pw);
-      if (hash === ADMIN_HASH) {
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('admin-content').style.display = 'block';
-        sessionStorage.setItem('admin_auth', 'true');
-        loadAdmin();
-      } else {
-        document.getElementById('login-error').style.display = 'block';
+        if (!quotes) {
+          const r = await fetch('../data/quotes.json');
+          quotes = await r.json();
+        }
+
+        allQuotes = Array.isArray(quotes) ? quotes : [];
+        renderStats();
+        renderQuotes(allQuotes);
+      } catch (err) {
+        console.error('Error loading quotes:', err);
       }
     }
 
-    // Check session
-    if (sessionStorage.getItem('admin_auth') === 'true') {
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('admin-content').style.display = 'block';
-      loadAdmin();
+    async function loadProposals() {
+      try {
+        const r = await fetch('/api/admin/proposals', { headers: headers() });
+        if (!r.ok) return;
+        pendingProposals = await r.json();
+        renderStats();
+        renderProposals();
+      } catch {}
     }
 
-    // Tab switching
+    // ─── Render ──────────────────────────────────────────
+    function renderStats() {
+      document.getElementById('stat-total').textContent = allQuotes.length;
+      const speakers = new Set(allQuotes.map(q => q.speaker));
+      document.getElementById('stat-speakers').textContent = speakers.size;
+      document.getElementById('stat-pending').textContent = pendingProposals.length;
+      const badge = document.getElementById('pending-badge');
+      if (pendingProposals.length > 0) {
+        badge.textContent = pendingProposals.length;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function renderQuotes(quotes) {
+      const list = document.getElementById('quotes-list');
+      if (quotes.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No quotes found.</p></div>';
+        return;
+      }
+
+      list.innerHTML = quotes.map(q => `
+        <div class="admin-quote-card" data-id="${q.id}">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+              <img src="${esc(q.thumbnail || '')}" alt="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-light); flex-shrink: 0;">
+              <div>
+                <p class="admin-quote-text">&ldquo;${esc(q.text)}&rdquo;</p>
+                <p class="admin-quote-speaker">&mdash; ${esc(q.speaker)}, ${esc(q.date || '')}</p>
+              </div>
+            </div>
+            <div class="admin-card-details" style="display: none;">
+              <div class="admin-detail"><span class="admin-detail-label">Role</span><span class="admin-detail-value">${esc(q.role || '—')}</span></div>
+              <div class="admin-detail"><span class="admin-detail-label">Source</span><span class="admin-detail-value">${esc(q.sourceDetail || q.source_detail || q.source || '—')}</span></div>
+              <div class="admin-detail admin-card-context"><span class="admin-detail-label">Context</span><span class="admin-detail-value">${esc(q.historicalContext || q.historical_context || '—')}</span></div>
+              <div class="admin-detail"><span class="admin-detail-label">Social</span><span class="admin-detail-value"><a href="${esc(q.socialLink || q.social_link || '#')}" target="_blank" style="color: var(--accent-coral); font-size: 0.8rem;">Link</a></span></div>
+            </div>
+          </div>
+          <div class="admin-actions">
+            <button class="btn-edit" onclick="toggleDetails(this)">Details</button>
+            <button class="btn-edit" onclick="openEdit(${q.id})">Edit</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderProposals() {
+      const list = document.getElementById('pending-list');
+      if (pendingProposals.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No pending quotes to review.</p></div>';
+        return;
+      }
+
+      list.innerHTML = pendingProposals.map(p => `
+        <div class="admin-quote-card" data-proposal-id="${p.id}">
+          <div style="flex: 1; min-width: 0;">
+            <p class="admin-quote-text">&ldquo;${esc(p.text)}&rdquo;</p>
+            <p class="admin-quote-speaker">&mdash; ${esc(p.speaker)}, ${esc(p.date || '')}</p>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">
+              Submitted by <strong>${esc(p.submitter_name)}</strong>
+              (<a href="${esc(p.submitter_social)}" target="_blank" style="color: var(--accent-coral);">profile</a>)
+              &mdash; ${new Date(p.created_at).toLocaleDateString()}
+            </div>
+            ${p.historical_context ? `<div style="margin-top: 0.5rem; font-size: 0.78rem; color: var(--text-secondary);"><strong>Context:</strong> ${esc(p.historical_context)}</div>` : ''}
+          </div>
+          <div class="admin-actions" style="flex-direction: column;">
+            <button class="btn-approve" onclick="reviewProposal(${p.id}, 'approve')">Approve</button>
+            <button class="btn-reject" onclick="reviewProposal(${p.id}, 'reject')">Reject</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ─── Actions ─────────────────────────────────────────
+    function toggleDetails(btn) {
+      const card = btn.closest('.admin-quote-card');
+      const details = card.querySelector('.admin-card-details');
+      const showing = details.style.display !== 'none';
+      details.style.display = showing ? 'none' : 'grid';
+      btn.textContent = showing ? 'Details' : 'Hide';
+    }
+
+    function openEdit(id) {
+      const q = allQuotes.find(q => q.id === id);
+      if (!q) return;
+
+      document.getElementById('modal-title').textContent = 'Edit Quote';
+      document.getElementById('edit-id').value = q.id;
+      document.getElementById('edit-text').value = q.text || '';
+      document.getElementById('edit-speaker').value = q.speaker || '';
+      document.getElementById('edit-date').value = q.date || '';
+      document.getElementById('edit-role').value = q.role || '';
+      document.getElementById('edit-social').value = q.socialLink || q.social_link || '';
+      document.getElementById('edit-source').value = q.source || '';
+      document.getElementById('edit-source-detail').value = q.sourceDetail || q.source_detail || '';
+      document.getElementById('edit-context').value = q.historicalContext || q.historical_context || '';
+      document.getElementById('edit-thumbnail-url').value = q.thumbnail || '';
+      document.getElementById('btn-delete-quote').style.display = 'inline-block';
+
+      // Show thumbnail preview if exists
+      const previewArea = document.getElementById('edit-thumbnail-preview-area');
+      if (q.thumbnail) {
+        previewArea.innerHTML = `
+          <div class="thumbnail-preview-row">
+            <img src="${esc(q.thumbnail)}" class="thumbnail-preview" alt="">
+            <button type="button" class="thumbnail-change-btn" onclick="clearThumbnailPreview()">Change</button>
+          </div>`;
+        document.getElementById('edit-thumbnail-zone').classList.add('has-image');
+      } else {
+        resetThumbnailPreview();
+      }
+
+      document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function openAddNew() {
+      document.getElementById('modal-title').textContent = 'Add New Quote';
+      document.getElementById('edit-id').value = '';
+      document.getElementById('edit-form').reset();
+      document.getElementById('edit-thumbnail-url').value = '';
+      document.getElementById('btn-delete-quote').style.display = 'none';
+      resetThumbnailPreview();
+      document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('edit-modal').style.display = 'none';
+    }
+
+    function clearThumbnailPreview() {
+      document.getElementById('edit-thumbnail-url').value = '';
+      resetThumbnailPreview();
+    }
+
+    function resetThumbnailPreview() {
+      const zone = document.getElementById('edit-thumbnail-zone');
+      zone.classList.remove('has-image');
+      document.getElementById('edit-thumbnail-preview-area').innerHTML = `
+        <div class="thumbnail-upload-icon">&#128247;</div>
+        <p class="thumbnail-upload-text">Drag &amp; drop an image or <strong>click to browse</strong></p>`;
+    }
+
+    // ─── Thumbnail Upload ────────────────────────────────
+    const thumbZone = document.getElementById('edit-thumbnail-zone');
+    const thumbInput = document.getElementById('edit-thumbnail-file');
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      thumbZone.addEventListener(evt, e => {
+        e.preventDefault();
+        thumbZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      thumbZone.addEventListener(evt, e => {
+        e.preventDefault();
+        thumbZone.classList.remove('dragover');
+      });
+    });
+
+    thumbZone.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleThumbnailFile(file);
+    });
+
+    thumbInput.addEventListener('change', () => {
+      if (thumbInput.files[0]) handleThumbnailFile(thumbInput.files[0]);
+    });
+
+    async function handleThumbnailFile(file) {
+      if (!file.type.startsWith('image/')) return;
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image must be under 2MB');
+        return;
+      }
+
+      // Show local preview immediately
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('edit-thumbnail-preview-area').innerHTML = `
+          <div class="thumbnail-preview-row">
+            <img src="${e.target.result}" class="thumbnail-preview" alt="">
+            <button type="button" class="thumbnail-change-btn" onclick="clearThumbnailPreview()">Change</button>
+          </div>`;
+        thumbZone.classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+
+      // Try uploading to R2
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch('/api/upload/thumbnail', { method: 'POST', body: fd });
+        if (r.ok) {
+          const { url } = await r.json();
+          document.getElementById('edit-thumbnail-url').value = url;
+        }
+      } catch {
+        // Upload will work once R2 is configured; for now, use data URL as fallback
+        document.getElementById('edit-thumbnail-url').value = document.querySelector('.thumbnail-preview')?.src || '';
+      }
+    }
+
+    // ─── Form Submit (Save) ──────────────────────────────
+    document.getElementById('edit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const data = {
+        text: document.getElementById('edit-text').value,
+        speaker: document.getElementById('edit-speaker').value,
+        date: document.getElementById('edit-date').value,
+        role: document.getElementById('edit-role').value,
+        social_link: document.getElementById('edit-social').value,
+        source: document.getElementById('edit-source').value,
+        source_detail: document.getElementById('edit-source-detail').value,
+        historical_context: document.getElementById('edit-context').value,
+        thumbnail: document.getElementById('edit-thumbnail-url').value,
+      };
+
+      try {
+        if (id) {
+          // Update existing
+          await fetch(`/api/admin/quotes/${id}`, {
+            method: 'PUT',
+            headers: headers(),
+            body: JSON.stringify(data),
+          });
+        } else {
+          // Add new — insert directly via admin API
+          // For now, update the static JSON (backend creates the DB record)
+          await fetch('/api/admin/quotes/new', {
+            method: 'PUT',
+            headers: headers(),
+            body: JSON.stringify(data),
+          });
+        }
+      } catch {}
+
+      closeModal();
+      loadQuotes();
+    });
+
+    // ─── Delete ──────────────────────────────────────────
+    document.getElementById('btn-delete-quote').addEventListener('click', async () => {
+      const id = document.getElementById('edit-id').value;
+      if (!id || !confirm('Delete this quote permanently?')) return;
+      try {
+        await fetch(`/api/admin/quotes/${id}`, { method: 'DELETE', headers: headers() });
+      } catch {}
+      closeModal();
+      loadQuotes();
+    });
+
+    // ─── Proposal Review ─────────────────────────────────
+    async function reviewProposal(id, action) {
+      const label = action === 'approve' ? 'Approve this quote?' : 'Reject this proposal?';
+      if (!confirm(label)) return;
+      try {
+        await fetch('/api/admin/proposals', {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ id, action }),
+        });
+      } catch {}
+      loadProposals();
+      if (action === 'approve') loadQuotes();
+    }
+
+    // ─── Search ──────────────────────────────────────────
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) { renderQuotes(allQuotes); return; }
+      const filtered = allQuotes.filter(quote =>
+        (quote.text || '').toLowerCase().includes(q) ||
+        (quote.speaker || '').toLowerCase().includes(q) ||
+        (quote.source || '').toLowerCase().includes(q) ||
+        (quote.sourceDetail || quote.source_detail || '').toLowerCase().includes(q) ||
+        (quote.role || '').toLowerCase().includes(q) ||
+        (quote.historicalContext || quote.historical_context || '').toLowerCase().includes(q)
+      );
+      renderQuotes(filtered);
+    });
+
+    // ─── Tabs ────────────────────────────────────────────
     document.querySelectorAll('.admin-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -127,39 +493,24 @@
       });
     });
 
-    // Load admin data
-    async function loadAdmin() {
-      try {
-        const response = await fetch('../data/quotes.json');
-        const quotes = await response.json();
+    // ─── Other listeners ─────────────────────────────────
+    document.getElementById('btn-add-quote').addEventListener('click', openAddNew);
+    document.getElementById('btn-cancel-edit').addEventListener('click', closeModal);
+    document.getElementById('edit-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('edit-modal')) closeModal();
+    });
 
-        // Stats
-        document.getElementById('stat-total').textContent = quotes.length;
-        const speakers = new Set(quotes.map(q => q.speaker));
-        document.getElementById('stat-speakers').textContent = speakers.size;
-
-        // Quote list
-        const list = document.getElementById('quotes-list');
-        list.innerHTML = '';
-
-        quotes.forEach(quote => {
-          const card = document.createElement('div');
-          card.className = 'admin-quote-card';
-          card.innerHTML = `
-            <div>
-              <p class="admin-quote-text">"${quote.text}"</p>
-              <p class="admin-quote-speaker">— ${quote.speaker}, ${quote.date}</p>
-            </div>
-            <div class="admin-actions">
-              <button class="btn-edit" onclick="alert('Edit functionality requires backend integration')">Edit</button>
-            </div>
-          `;
-          list.appendChild(card);
-        });
-      } catch (err) {
-        console.error('Error loading admin data:', err);
-      }
+    // ─── Util ────────────────────────────────────────────
+    function esc(str) {
+      if (!str) return '';
+      const el = document.createElement('span');
+      el.textContent = str;
+      return el.innerHTML;
     }
+
+    // ─── Init ────────────────────────────────────────────
+    loadQuotes();
+    loadProposals();
   </script>
 
 </body>
