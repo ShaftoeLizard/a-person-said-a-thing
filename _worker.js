@@ -80,24 +80,26 @@ async function handleAPI(request, env, url) {
 // ─── Auth ────────────────────────────────────────────────
 
 function checkAuth(request, env) {
-  // Cloudflare Access JWT (if configured)
+  // Method 1: Bearer token (admin token from login form)
+  const auth = request.headers.get('Authorization');
+  if (auth && env.ADMIN_TOKEN) {
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
+    if (token === env.ADMIN_TOKEN) {
+      return null; // authorized
+    }
+  }
+
+  // Method 2: Cloudflare Access JWT (Zero Trust)
   const jwt = request.headers.get('Cf-Access-Jwt-Assertion');
   if (jwt) {
     try {
       const payload = JSON.parse(atob(jwt.split('.')[1]));
       const allowed = (env.ADMIN_EMAILS || 'southworth.cole@proton.me').split(',');
-      if (!allowed.includes(payload.email)) {
-        return json({ error: 'Unauthorized' }, 403);
+      if (allowed.includes(payload.email)) {
+        return null; // authorized
       }
-    } catch {}
-    return null; // authorized
-  }
-
-  // Bearer token fallback
-  const auth = request.headers.get('Authorization');
-  if (auth && env.ADMIN_TOKEN) {
-    if (auth.replace('Bearer ', '') === env.ADMIN_TOKEN) {
-      return null; // authorized
+    } catch {
+      // JWT parsing failed — don't authorize on malformed tokens
     }
   }
 
