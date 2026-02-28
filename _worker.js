@@ -80,16 +80,7 @@ async function handleAPI(request, env, url) {
 // ─── Auth ────────────────────────────────────────────────
 
 function checkAuth(request, env) {
-  // Method 1: Bearer token (admin token from login form)
-  const auth = request.headers.get('Authorization');
-  if (auth && env.ADMIN_TOKEN) {
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
-    if (token === env.ADMIN_TOKEN) {
-      return null; // authorized
-    }
-  }
-
-  // Method 2: Cloudflare Access JWT (Zero Trust)
+  // Cloudflare Access (Zero Trust) — JWT verification
   const jwt = request.headers.get('Cf-Access-Jwt-Assertion');
   if (jwt) {
     try {
@@ -99,7 +90,7 @@ function checkAuth(request, env) {
         return null; // authorized
       }
     } catch {
-      // JWT parsing failed — don't authorize on malformed tokens
+      // JWT parsing failed
     }
   }
 

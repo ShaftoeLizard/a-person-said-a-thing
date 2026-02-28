@@ -14,21 +14,8 @@
 </head>
 <body>
 
-  <!-- Login overlay (shown if not authenticated) -->
-  <div class="admin-login-overlay" id="login-overlay" style="display: none;">
-    <div class="admin-login-box">
-      <h2>Admin Access</h2>
-      <p>Enter your admin token to continue.</p>
-      <input class="form-input" type="password" id="admin-token-input" placeholder="Enter admin token" autofocus>
-      <button class="submit-btn" id="login-btn" style="margin-top: 0.5rem;">Enter</button>
-      <p id="login-error" style="color: #c62828; font-size: 0.8rem; margin-top: 0.75rem; display: none;">
-        Invalid token. Try again.
-      </p>
-    </div>
-  </div>
-
-  <!-- Admin content -->
-  <div class="admin-container" id="admin-content" style="display: none;">
+  <!-- Admin content (protected by Cloudflare Access / Zero Trust) -->
+  <div class="admin-container" id="admin-content">
 
     <a href="../index.html" class="back-link">&larr; Back to site</a>
 
@@ -168,62 +155,9 @@
     // ─── State ───────────────────────────────────────────
     let allQuotes = [];
     let pendingProposals = [];
-    let authToken = sessionStorage.getItem('admin_token') || '';
 
     function headers() {
-      const h = { 'Content-Type': 'application/json' };
-      if (authToken) h['Authorization'] = `Bearer ${authToken}`;
-      return h;
-    }
-
-    // ─── Auth ────────────────────────────────────────────
-    async function checkAuth() {
-      // Try hitting an admin endpoint — if Cloudflare Access is active,
-      // the request will carry the Access JWT cookie automatically
-      try {
-        const r = await fetch('/api/admin/proposals', { headers: headers() });
-        if (r.ok) {
-          showAdmin();
-          return true;
-        }
-      } catch {}
-
-      // Not authenticated — show login
-      document.getElementById('login-overlay').style.display = 'flex';
-      return false;
-    }
-
-    function showAdmin() {
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('admin-content').style.display = 'block';
-      loadQuotes();
-      loadProposals();
-    }
-
-    // Token login
-    document.getElementById('login-btn').addEventListener('click', tryTokenLogin);
-    document.getElementById('admin-token-input').addEventListener('keypress', e => {
-      if (e.key === 'Enter') tryTokenLogin();
-    });
-
-    async function tryTokenLogin() {
-      const token = document.getElementById('admin-token-input').value.trim();
-      if (!token) return;
-
-      // Test the token against the API
-      try {
-        const r = await fetch('/api/admin/proposals', {
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        });
-        if (r.ok) {
-          authToken = token;
-          sessionStorage.setItem('admin_token', token);
-          showAdmin();
-          return;
-        }
-      } catch {}
-
-      document.getElementById('login-error').style.display = 'block';
+      return { 'Content-Type': 'application/json' };
     }
 
     // ─── Load Data ───────────────────────────────────────
@@ -568,7 +502,8 @@
     }
 
     // ─── Init ────────────────────────────────────────────
-    checkAuth();
+    loadQuotes();
+    loadProposals();
   </script>
 
 </body>
